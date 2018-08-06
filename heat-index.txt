@@ -1,0 +1,61 @@
+From NWS document SR 90-23.
+
+The Heat Index combines temperature and relative humidity (RH) values to determine how hot the air actually "feels" to the human body.  
+
+Heat Index is only applicable for temperatures > 80°F and RH > 40%.
+
+-  INPUT:
+   *  Temperature
+   *  Dewpoint temperature
+
+or
+   *  Temperature
+   *  Relative humidity (%)
+
+   Temps must be converted to F before use.
+
+-  OUTPUT:
+   *  Heat Index (°F)
+
+
+heat index in F = 
+    -42.379
+    +(2.04901523*temp_F)
+    +(10.14333127*rh)
+    -(0.22475541*temp_F*rh)
+    -(0.00683783*temp_F^2)
+    -(0.05481717*rh^2)
+    +(0.00122874*temp_F^2*rh)
+    +(0.00085282*temp_F*rh^2)
+    -(0.00000199*temp_F^2*rh^2)
+
+
+heat index in C = cvt_f_c(heat index in f);
+
+To calulate RH:
+
+1. compute vapor pressure using air temp (vp)
+2. compute vapor pressure using dewpoint (svp = saturation vapor pressure)
+3. rh = (vp/svp) * 100
+
+constraints: 
+ - dewpoint cannot be < -243 C (-405.4 F)
+ - dewpoint cannot be > air temp
+
+Questions:
+ - This algorithm uses the WMO formula for vapor pressure:
+   6.112 * std::exp((17.62*air_temp) / (243.12 + air_temp));
+   
+   the word doc references the WMO version of vapor pressure.
+WMO-No.8: Guide to Meteorological Instruments and Methods of Observing, Part 1: Measurements of Meteorological Variables, 2008, updated 2010, reissued 2012 (chap 4, annex 4B, 4A(11), 4A(5)).
+
+ - absolute humidity uses the USAF (really NWS) formula
+
+ - consider the WMO 'long form' from 
+    Saturation Water Vapor Pressure over Liquid Water.pdf
+
+
+ - is not valid really not valid, or print a warning along with results?
+
+
+
