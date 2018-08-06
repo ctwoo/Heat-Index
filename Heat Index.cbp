@@ -31,11 +31,19 @@
 		<Compiler>
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
+			<Add option="-pedantic" />
+                        <Add option="-Wextra" />
+                        <Add option="-std=c++11" />
+                        <Add directory="../include/json/single_include" />
+                        <Add directory="../include/doctest" />
 		</Compiler>
 		<Unit filename="calc.cpp" />
+		<Unit filename="calc.h" />
 		<Unit filename="cgi.cpp" />
+		<Unit filename="cgi.h" />
 		<Unit filename="main.cpp" />
 		<Unit filename="util.cpp" />
+		<Unit filename="util.h" />
 		<Extensions>
 			<code_completion />
 			<envvars />

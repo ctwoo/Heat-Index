@@ -3,12 +3,13 @@
 #include <cmath>
 #include <map>
 #include <string>
-
+#include <cmath>
 #include <nlohmann/json.hpp>
 
 struct input_data_t {
     double air_temp = -99.0;
     double dew_temp = -500.0;
+    double rh = 100;
 };
 
 
@@ -27,18 +28,21 @@ struct response_t {
     response_t& operator=(const response_t& other) = default;
 };
 
-// Absolute Humidity calculator
+// Heat Index calculator
 //
-// Absolute Humidity is defined as:
-// - the mass of water vapor contained in a unit volume of air.
+// Heat Index is defined as:
+// - how hot the air actually "feels" to the human body
 //
 // Inputs:
-//  - Air temperature (deg C)
+//  - Air temperature (deg F)
+//  - Dewpoint Temperature (deg C)
+//  OR
+//  - Air temperature (deg F)
+//  - Relative humidity (%)
 //
 // Output:
-//  - Absolute humidity (kg / m**3)
+//  - Heat Index (deg F)
 //
-
 // Perform all required calculations and
 // return the response structure
 response_t calculate (const response_t& response);
@@ -68,18 +72,26 @@ constexpr double cvt_c_f(double c) { return (9.0 / 5.0) * c + 32.0; }
 constexpr double cvt_f_c(double f) { return (5.0 / 9.0) * (f - 32.0); }
 
 //Calculate Saturation Vapor Pressure
-double svp (double air_temp) {
-    return 6.11*10**((7.5*air_temp)/(237.7+air_temp));
+/*double svp (double air_temp, double dew_temp) {
+    return 6.112 * std::exp((17.62 * dew_temp)/(243.12 + dew_temp));
     }
 
 // Calculate Vapor Pressure
-double vp (double dew_temp) {
-    return 6.11*10**((7.5*dew_temp)/(237.7+dew_temp);
+double vp (double air_temp, double dew_temp) {
+    return 6.112 * std::exp((17.62 * air_temp)/(243.12 + air_temp));
     }
 
 // Calculate Relative Humidity Percentage
-double rh () {
+double rh (double vp, double svp) {
     return (vp/svp)*100;
     }
+
+// Calculate Heat Index
+double h_i(double air_temp , double rh) {
+    return (-42.379 + (2.04901523 * air_temp) + (10.14333127 * rh) - (0.22475541* air_temp * rh)-(0.00683783 * pow(air_temp , 2.0)) - (0.05481717 * pow(rh, 2.0)) + (0.00122874 * pow(air_temp, 2.0) * rh) + (0.00085282* air_temp
+            * pow(rh , 2.0))- (0.00000199*pow(air_temp,2.0)*pow(rh, 2.0)));
+            }
+*/
+
 
 
