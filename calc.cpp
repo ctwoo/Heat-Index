@@ -42,7 +42,13 @@ response_t isvalid (const std::map<std::string, std::string>& query_params) {
         r.doc["message"] = "No value provided for air_temp input parameter.";
         r.doc["expected"] = "a floating point value";
         r.doc["actual"] = it->second;
-    } else {
+    }   /*else if () {
+        r.valid = false;
+        r.doc["status"] = "error";
+        r.doc["message"] = "No value provided for air_temp input parameter.";
+        r.doc["expected"] = "a floating point value";
+        r.doc["actual"] = it->second;
+    } */else {
         r.valid = false;
         r.doc["status"] = "error";
         r.doc["message"] = "Required input parameter not specified.";
@@ -57,9 +63,9 @@ response_t isvalid (const std::map<std::string, std::string>& query_params) {
         string uom = it->second;
         uom = toupper(uom[0]);
         if (uom == "F") {
-            // No action needed
+            r.input.air_temp = cvt_f_c(r.input.air_temp);
         } else if (uom == "C") {
-            r.input.air_temp = cvt_c_f(r.input.air_temp);
+            // No action needed
         }
           else {
             r.valid = false;
@@ -71,7 +77,7 @@ response_t isvalid (const std::map<std::string, std::string>& query_params) {
           }
     }
 
-    // Validate Dewpoint Temperature
+    // Validate Dewpoint Temperature and calculate Relative Humidity
     it = query_params.find("dew_temp");
     if (it != query_params.end() && !it->second.empty()) {
         if (numeric(it->second)) {
@@ -97,10 +103,11 @@ response_t isvalid (const std::map<std::string, std::string>& query_params) {
         string dew_uom = it->second;
         dew_uom = toupper(dew_uom[0]);
         if (dew_uom == "C") {
-            //no action required
+           // double rh = rh(r.input.air_temp, r.input.dew_temp);
         }
         else if (dew_uom == "F") {
             r.input.dew_temp = cvt_f_c(r.input.dew_temp);
+            //double rh = rh(r.input.dew_temp);
         }
         else {
             r.valid = false;
@@ -148,6 +155,8 @@ response_t isvalid (const std::map<std::string, std::string>& query_params) {
     return r;
 }
 
+// Heat Index Calculation
+
 response_t calculate (const response_t& response) {
     auto r = response;
 
@@ -157,11 +166,24 @@ response_t calculate (const response_t& response) {
               "The valid input limits for dewpoint temperature are between -243C and the input air temperature";
     }
 
-//auto heat_index = h_i(r.input.air_temp, rh);
+// Determine which path to take
+/*    path (const std::map<std::string, std::string>& query_params) {
+    auto it = query_params.find("rh");
+    auto it2 = query_params.find("dew_temp");
+    if (!it->second.empty() && it2 ->second.empty()) {
+        r.input.air_temp = cvt_c_f(r.input.air_temp);
+        auto heat_index = calc(r.input.air_temp,r.input.rh);
+    }
+    else if(!it2->second.empty() && it->second.empty()) {
+        auto rh_conversion = rh(double r.input.air_temp, double r.input.air_temp);
+        r.input.air_temp = cvt_c_f(r.input.air_temp);
+        auto heat_index = calc(r.input.air_temp, rh_conversion);
+    }
+    }
 
-//r.doc["data"]["heat_index"] = make_json_pair("F", heat_index);
+r.doc["data"]["heat_index"] = make_json_pair("F", heat_index);
 
-    return r;
+    return r;*/
 }
 
 
