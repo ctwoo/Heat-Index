@@ -9,7 +9,7 @@
 struct input_data_t {
     double air_temp = -99.0;
     double dew_temp = -500.0;
-    double rh = 100;
+    double rh = 105.0;
 };
 
 
@@ -71,25 +71,31 @@ constexpr double cvt_c_f(double c) { return (9.0 / 5.0) * c + 32.0; }
 // convert Fahrenheit to Celcius
 constexpr double cvt_f_c(double f) { return (5.0 / 9.0) * (f - 32.0); }
 
-//Calculate Saturation Vapor Pressure
-double svp (double dew_temp) {
-    return 6.112 * std::exp((17.62 * dew_temp)/(243.12 + dew_temp));
-    }
 
 // Calculate Vapor Pressure
-double vp (double air_temp) {
+double vapor_pressure (double air_temp) {
     return 6.112 * std::exp((17.62 * air_temp)/(243.12 + air_temp));
     }
 
 // Calculate Relative Humidity Percentage
 double rh (double air_temp, double dew_temp) {
-    return (vp(air_temp)/svp(dew_temp))*100;
+    return (vapor_pressure(air_temp)/vapor_pressure(dew_temp))*100;
     }
 
-// Calculate Heat Index
-double calc(double air_temp , double rh) {
-    return (-42.379 + (2.04901523 * air_temp) + (10.14333127 * rh) - (0.22475541* air_temp * rh)-(0.00683783 * pow(air_temp , 2.0)) - (0.05481717 * pow(rh, 2.0)) + (0.00122874 * pow(air_temp, 2.0) * rh) + (0.00085282* air_temp
-    * pow(rh , 2.0))- (0.00000199*pow(air_temp,2.0)*pow(rh, 2.0)));
+// Calculate Heat Index using the formula from ...
+double heat_index(double air_temp , double rh) {
+    constexpr rh2 = rh*rh;
+    constexpr at2 = air_temp*air_temp;
+
+    return -42.379
+           + (2.04901523 * air_temp)
+           + (10.14333127 * rh)
+           - (0.22475541  * air_temp * rh)
+           - (0.00683783  * at2)
+           - (0.05481717  * rh2)
+           + (0.00122874  * at2 * rh)
+           + (0.00085282  * air_temp * rh2)
+           - (0.00000199  * at2*rh2);
     }
 
 
