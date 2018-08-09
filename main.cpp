@@ -97,7 +97,7 @@ int main(int argc, char** argv) {
     // We got some kind of GET request.
     // Validate and respond.
     response_t response;
-    response = isvalid(in.kvp);
+    response = validate(in.kvp);
 
     if (response.valid) {
       std::cout << json_header();

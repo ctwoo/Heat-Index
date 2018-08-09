@@ -20,39 +20,63 @@ bool numeric(string value) {
     ss >> tmp;
     return !(!ss || ss.rdbuf()->in_avail() > 0);
 }
+response_t validate(const kvp& query_params)
+{
+    response_t response {true, json::object({ {"status","success"} })};
+    validate_air_temp(query_params, &response);
+    if (!response.valid) {
+        return response;
+    }
+    return response;
+}
 
-response_t isvalid (const std::map<std::string, std::string>& query_params) {
-    response_t r = {true, {"status","success"}};
-
-    // Validate required temperature input
+response_t validate_air_temp (const kvp& query_params, response_t* r)
+{
     auto it = query_params.find("air_temp");
     if (it != query_params.end() && !it->second.empty()) {
         if(numeric(it->second)) {
-            r.input.air_temp = atof(it->second.c_str());
+            r->input.air_temp = atof(it->second.c_str());
         } else {
-            r.valid = false;
-            r.doc["status"] = "error";
-            r.doc["message"] = "Non-numeric value provided for air_temp.";
-            r.doc["expected"] = "a floating point value";
-            r.doc["actual"] = it->second;
+            r->valid = false;
+            r->doc["status"] = "error";
+            r->doc["message"] = "Non-numeric value provided for air_temp.";
+            r->doc["expected"] = "a floating point value";
+            r->doc["actual"] = it->second;
         }
     } else if (it->second.empty()) {
-        r.valid = false;
-        r.doc["status"] = "error";
-        r.doc["message"] = "No value provided for air_temp input parameter.";
-        r.doc["expected"] = "a floating point value >80 deg Fahrenheit";
-        r.doc["actual"] = it->second;
+        r->valid = false;
+        r->doc["status"] = "error";
+        r->doc["message"] = "No value provided for air_temp input parameter.";
+        r->doc["expected"] = "a floating point value >80 deg Fahrenheit";
+        r->doc["actual"] = it->second;
     }   else {
-        r.valid = false;
-        r.doc["status"] = "error";
-        r.doc["message"] = "Required input parameter not specified.";
-        r.doc["expected"] = "air_temp";
-        r.doc["actual"] = nullptr;
-        return r;
+        r->valid = false;
+        r->doc["status"] = "error";
+        r->doc["message"] = "Required input parameter not specified.";
+        r->doc["expected"] = "air_temp";
+        r->doc["actual"] = nullptr;
     }
+}
+response_t validate_dewpoint (const kvp&, response_t*);
+response_t validate_relative_humidity (const kvp&, response_t*);
 
-    // Validate Optional Air Temperature UOM
-    it = query_params.find("air_uom");
+response_t calculate (const response_t& r)
+{
+    return r;
+}
+
+
+/*
+response_t r = {true, {"status","success"}};
+
+// Validate required temperature input
+response_t valid_air_temp (const std::map<std::string, std::string>& query_params) {
+
+}
+
+// Validate Optional Air Temperature UOM
+response_t valid_air_uom(kvp) {
+    auto it = query_params.find("air_uom");
     if (it != query_params.end()) {
         string uom = it->second;
         uom = toupper(uom[0]);
@@ -61,7 +85,7 @@ response_t isvalid (const std::map<std::string, std::string>& query_params) {
         } else if (uom == "C") {
             // No action needed
         }
-          else {
+        else {
             r.valid = false;
             r.doc["stats"] = "error";
             r.doc["message"] = "Unknown unit of measure provided.";
@@ -70,36 +94,19 @@ response_t isvalid (const std::map<std::string, std::string>& query_params) {
             return r;
           }
     }
+}
 
-    // Validate Dewpoint Temperature and Calculate Relative Humidity
-    it = query_params.find("dew_temp");
-    if (it != query_params.end() && !it->second.empty()) {
-        if (numeric(it->second)) {
-            r.input.dew_temp = atof(it->second.c_str());
-        } else {
-            r.valid = false;
-            r.doc["status"] = "error";
-            r.doc["message"] = "Non-numeric value provided for dew_temp.";
-            r.doc["expected"] = "a floating point value [-405.4 F, air_temp]";
-            r.doc["actual"] = it->second;
-        }
-    }   else if (it->second.empty()) {
-            r.valid = false;
-            r.doc["status"] = "error";
-            r.doc["message"] = "No value provided for dew_temp input parameter.";
-            r.doc["expected"] = "a floating point value [-405.4 F, air_temp]";
-            r.doc["actual"] = it->second;
-        }
 
-    // Validate optional Dewpoint temperature UOM
-    it = query_params.find("dew_uom");
+
+// Validate optional Dewpoint temperature UOM
+response_t valid_dew_uom(kvp) {
+    auto it = query_params.find("dew_uom");
     if (it != query_params.end()) {
         string dew_uom = it->second;
         dew_uom = toupper(dew_uom[0]);
         if (dew_uom == "C") {
            // No action needed
-        }
-        else if (dew_uom == "F") {
+        } else if (dew_uom == "F") {
             r.input.dew_temp = cvt_f_c(r.input.dew_temp);
         }
         else {
@@ -112,30 +119,56 @@ response_t isvalid (const std::map<std::string, std::string>& query_params) {
         }
 
     }
+}
 
-    // Validate Relative Humidity Input
-    it = query_params.find("rh");
+// Validate Dewpoint Temperature
+response_t valid_dew_temp(kvp) {
+    auto it = query_params.find("dew_temp");
+    if (it != query_params.end() && !it->second.empty()) {
+        if (numeric(it->second)) {
+            r.input.dew_temp = atof(it->second.c_str());
+        }   else if (it->second.empty()){
+                r.valid = false;
+                r.doc["status"] = "error";
+                r.doc["message"] = "No value provided for dew_temp input parameter.";
+                r.doc["expected"] = "a floating point value [-405.4 F, air_temp]";
+                r.doc["actual"] = it->second;
+        }
+        else {
+            r.valid = false;
+            r.doc["status"] = "error";
+            r.doc["message"] = "Non-numeric value provided for dew_temp.";
+            r.doc["expected"] = "a floating point value [-405.4 F, air_temp]";
+            r.doc["actual"] = it->second;
+        }
+    return r;
+}
+
+// Validate Relative Humidity Input
+response_t valid_relative_humidity(kvp) {
+    auto it = query_params.find("rh");
     if (it != query_params.end() && !it->second.empty()) {
         if (numeric(it->second)) {
             r.input.rh = atof(it->second.c_str());
-        } else {
+        }   else if (it->second.empty()) {
+                r.valid = false;
+                r.doc["status"] = "error";
+                r.doc["message"] = "No value provided for rh input parameter.";
+                r.doc["expected"] = "a floating point value (0,100)";
+                r.doc["actual"] = it->second;
+        }
+        else {
             r.valid = false;
             r.doc["status"] = "error";
             r.doc["message"] = "Non-numeric value provided for rh.";
             r.doc["expected"] = "a floating point value (0,100)";
             r.doc["actual"] = it->second;
         }
-    }   else if (it->second.empty()) {
-            r.valid = false;
-            r.doc["status"] = "error";
-            r.doc["message"] = "No value provided for rh input parameter.";
-            r.doc["expected"] = "a floating point value (0,100)";
-            r.doc["actual"] = it->second;
-        }
-
+    return r;
+}
     // Prevents calculation if BOTH relative humidity and dewpoint temperature are input.
-
-    it = query_params.find("rh");
+response_t validate(kvp) {
+    auto it = query_params.find("rh");
     auto it2 = query_params.find("dew_temp");
     if (it != query_params.end() && !it->second.empty()) {
         if (it2 != query_params.end() && !it2->second.empty()) {
@@ -184,11 +217,11 @@ response_t validate_dew_temp (const response_t& response) {
             auto heat_index = calc(r.input.air_temp,r.input.rh);
         }
         else {
-            auto rh_conversion = rh(r.input.air_temp, r.input.dew_temp);
+            auto rh = relative_humidity(r.input.air_temp, r.input.dew_temp);
             r.input.air_temp = cvt_c_f(r.input.air_temp);
-            auto heat_index = calc(r.input.air_temp, rh_conversion);
+            auto heat_index = calc(r.input.air_temp, rh);
         }
         return r;
     }
-
+*/
 

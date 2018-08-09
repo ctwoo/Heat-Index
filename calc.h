@@ -48,7 +48,16 @@ struct response_t {
 response_t calculate (const response_t& response);
 
 // validate the query string read in by the program
-response_t isvalid (const std::map<std::string, std::string>& query_params);
+using kvp = std::map<std::string, std::string>;
+
+
+
+// Validates whether or not BOTH dewpoint and relative humidity are input
+response_t validate (const kvp& query_params);
+
+response_t validate_air_temp (const kvp&, response_t*);
+response_t validate_dewpoint (const kvp&, response_t*);
+response_t validate_relative_humidity (const kvp&, response_t*);
 
 // build a json object for a specific UOM and value pair
 nlohmann::json make_json_param(const std::string& uom, const double& value);
@@ -73,29 +82,27 @@ constexpr double cvt_f_c(double f) { return (5.0 / 9.0) * (f - 32.0); }
 
 
 // Calculate Vapor Pressure
-double vapor_pressure (double air_temp) {
+inline double vapor_pressure (double air_temp) {
     return 6.112 * std::exp((17.62 * air_temp)/(243.12 + air_temp));
     }
 
 // Calculate Relative Humidity Percentage
-double rh (double air_temp, double dew_temp) {
+inline double relative_humidity (double air_temp, double dew_temp) {
     return (vapor_pressure(air_temp)/vapor_pressure(dew_temp))*100;
     }
 
 // Calculate Heat Index using the formula from ...
-double heat_index(double air_temp , double rh) {
-    constexpr rh2 = rh*rh;
-    constexpr at2 = air_temp*air_temp;
+inline double heat_index(double air_temp , double relative_humidity) {
 
     return -42.379
-           + (2.04901523 * air_temp)
-           + (10.14333127 * rh)
-           - (0.22475541  * air_temp * rh)
-           - (0.00683783  * at2)
-           - (0.05481717  * rh2)
-           + (0.00122874  * at2 * rh)
-           + (0.00085282  * air_temp * rh2)
-           - (0.00000199  * at2*rh2);
+           + (2.04901523  * air_temp)
+           + (10.14333127 * relative_humidity)
+           - (0.22475541  * air_temp * relative_humidity)
+           - (0.00683783  * air_temp*air_temp)
+           - (0.05481717  * relative_humidity * relative_humidity)
+           + (0.00122874  * air_temp * air_temp * relative_humidity)
+           + (0.00085282  * air_temp * relative_humidity * relative_humidity)
+           - (0.00000199  * air_temp * air_temp * relative_humidity * relative_humidity);
     }
 
 
