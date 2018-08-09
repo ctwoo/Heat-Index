@@ -1,0 +1,29 @@
+CXX = c++
+ifndef CXXFLAGS
+	CXXFLAGS = -Wall -Wextra -pedantic -std=c++11
+endif
+ifndef CFLAGS
+	CFLAGS = -Wall -Wextra -pedantic -std=c11
+endif
+
+ifneq ($(OS),Windows_NT)
+	CXXFLAGS += -DHAVE_SETENV
+endif
+
+INCLUDES+=-I../../json/single_include
+INCLUDES+=-I../../doctest
+INCLUDES+=-I/usr/local/include
+
+PROGS = test-util test-calc
+
+all: $(PROGS)
+
+test-util : clean
+	${CXX} ${CXXFLAGS} ${INCLUDES}  -o $@ ../util.cpp test-util.cpp
+
+test-calc : clean
+	${CXX} ${CXXFLAGS} ${INCLUDES}  -o $@ ../util.cpp ../calc.cpp test-calc.cpp
+
+clean:
+	rm -f $(PROGS)
+
