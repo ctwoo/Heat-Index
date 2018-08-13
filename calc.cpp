@@ -189,13 +189,14 @@ response_t calculate (const response_t& r) {
             double v_p = calculate_vapor_pressure(r->input.air_temp);
             double s_v_p = calculate_vapor_pressure(r->input.dew_temp);
             calculate_relative_humidity(v_p, s_v_p);
-            return relative_humidity;
+            return calculate_relative_humidity(v_p, s_v_p);
 
             r->input.air_temp = cvt_c_f(r->input.air_temp);
-            auto heat_index = calculate_heat_index(r->input.air_temp, r->input.relative_humidity);
+            auto heat_index = calculate_heat_index(r->input.air_temp, calculate_relative_humidity(v_p, s_v_p));
             r->doc["data"]["absolute_humidity"] = make_json_pair("deg F", heat_index);
         }
         else {
+            r->input.air_temp = cvt_c_f(r->input.air_temp);
             auto heat_index = calculate_heat_index(r->input.air_temp, r->input.relative_humidity);
             r->doc["data"]["absolute_humidity"] = make_json_pair("deg F", heat_index);
         }
