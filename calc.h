@@ -51,7 +51,7 @@ using kvp = std::map<std::string, std::string>;
 
 
 
-// Validates whether or not BOTH dewpoint and relative humidity are input
+// Validations
 response_t validate (const kvp& query_params);
 
 response_t validate_air_temp (const kvp&, response_t*);
@@ -60,6 +60,7 @@ response_t validate_dewpoint (const kvp&, response_t*);
 response_t validate_dewpoint_uom (const kvp&, response_t*);
 response_t validate_relative_humidity (const kvp&, response_t*);
 response_t validate_input_values (const kvp&, response_t*);
+response_t validate_dew_rel_hum (const kvp&, response_t*);
 
 // build a json object for a specific UOM and value pair
 nlohmann::json make_json_param(const std::string& uom, const double& value);
@@ -83,18 +84,21 @@ constexpr double cvt_c_f(double c) { return (9.0 / 5.0) * c + 32.0; }
 constexpr double cvt_f_c(double f) { return (5.0 / 9.0) * (f - 32.0); }
 
 
+//Determines need to calculate Vapor Pressure
+response_t cvt_dew_rh (const kvp&, response_t*);
+
 // Calculate Vapor Pressure
-inline double vapor_pressure (double air_temp) {
+inline double calculate_vapor_pressure (double air_temp) {
     return 6.112 * std::exp((17.62 * air_temp)/(243.12 + air_temp));
 }
 
 // Calculate Relative Humidity Percentage
-inline double relative_humidity (double air_temp, double dew_temp) {
-    return (vapor_pressure(air_temp)/vapor_pressure(dew_temp))*100;
+inline double calculate_relative_humidity (double air_temp, double dew_temp) {
+    return (calculate_vapor_pressure(air_temp)/ calculate_vapor_pressure(dew_temp))*100;
 }
 
 // Calculate Heat Index using the formula from ...
-inline double heat_index(double air_temp , double relative_humidity) {
+inline double calculate_heat_index (double air_temp , double relative_humidity) {
 
     return -42.379
 	+ (2.04901523  * air_temp)
