@@ -29,6 +29,8 @@ response_t validate(const kvp& query_params)
     validate_dewpoint_uom(query_params, &response);
     validate_relative_humidity(query_params, &response);
     validate_input_values(query_params, &response);
+    validate_dew_rel_hum (query_params, &response);
+
     return response;
 }
 
@@ -163,92 +165,49 @@ response_t validate_input_values(const kvp& query_params, response_t* r) {
         r->doc["message"] = "The valid input limits for relative humidity is greater than 40.";
     }
 }
+// Prevents calculation if BOTH relative humidity and dewpoint temperature are input
+response_t validate_dew_rel_hum (const kvp& query_params, response_t* r) {
+    auto it = query_params.find("relative_humidity");
+    auto it2 = query_params.find("dew_temp");
+    if (it != query_params.end() && !it->second.empty()) {
+        if (it2 != query_params.end() && !it2->second.empty()) {
+            r->valid = false;
+            r->doc["status"] = "error";
+            r->doc["message"] = "Requires rh or dew_temp, not both.";
+            r->doc["expected"] = "a floating point value rh = (0,100) or dew_temp = [-405.4F , air_temp]";
+            r->doc["actual"] = it->second, it2->second;
+        }
+    }
+}
 
 
-response_t calculate (const response_t& r)
-{
+response_t calculate (const response_t& r) {
+    auto r = response;
+    response_t cvt_dew_rh(const kvp& query_params, response_t* r) {
+        auto it = query_params.find("relative_humidity");
+        if (it != query_params.end() && !it ->second.empty()) {
+            double v_p = calculate_vapor_pressure(r->input.air_temp);
+            double s_v_p = calculate_vapor_pressure(r->input.dew_temp);
+            calculate_relative_humidity(v_p, s_v_p);
+            return relative_humidity;
+
+            r->input.air_temp = cvt_c_f(r->input.air_temp);
+            auto heat_index = calculate_heat_index(r->input.air_temp, r->input.relative_humidity);
+            r->doc["data"]["absolute_humidity"] = make_json_pair("deg F", heat_index);
+        }
+        else {
+            auto heat_index = calculate_heat_index(r->input.air_temp, r->input.relative_humidity);
+            r->doc["data"]["absolute_humidity"] = make_json_pair("deg F", heat_index);
+        }
+    }
     return r;
 }
 
 
 /*
-response_t r = {true, {"status","success"}};
-
-// Validate required temperature input
-response_t valid_air_temp (const std::map<std::string, std::string>& query_params) {
-
-}
-
-// Validate Optional Air Temperature UOM
-response_t valid_air_uom(kvp) {
-    auto it = query_params.find("air_uom");
-    if (it != query_params.end()) {
-        string uom = it->second;
-        uom = toupper(uom[0]);
-        if (uom == "F") {
-            r.input.air_temp = cvt_f_c(r.input.air_temp);
-        } else if (uom == "C") {
-            // No action needed
-        }
-        else {
-            r.valid = false;
-            r.doc["stats"] = "error";
-            r.doc["message"] = "Unknown unit of measure provided.";
-            r.doc["expected"] = "One of 'uom=C' or 'uom=F'.";
-            r.doc["actual"] = it->second;
-            return r;
-          }
-    }
-}
 
 
 
-// Validate optional Dewpoint temperature UOM
-response_t valid_dew_uom(kvp) {
-
-}
-
-
-// Validate Relative Humidity Input
-response_t valid_relative_humidity(kvp) {
-
-    return r;
-}
-    // Prevents calculation if BOTH relative humidity and dewpoint temperature are input.
-response_t validate(kvp) {
-    auto it = query_params.find("rh");
-    auto it2 = query_params.find("dew_temp");
-    if (it != query_params.end() && !it->second.empty()) {
-        if (it2 != query_params.end() && !it2->second.empty()) {
-            r.valid = false;
-            r.doc["status"] = "error";
-            r.doc["message"] = "Requires rh or dew_temp, not both.";
-            r.doc["expected"] = "a floating point value rh = (0,100) or dew_temp = [-405.4F , air_temp]";
-            r.doc["actual"] = it->second, it2->second;
-        }
-    }
-    return r;
-}
-
-// Validate dew_temp & air_temp values
-
-response_t validate_dew_temp (const response_t& response) {
-    auto r = response;
-
-    if (r.input.dew_temp < -243 || r.input.dew_temp > r.input.air_temp) {
-
-        return r;
-        // exit(0);
-    }
-
-
-        return r;
-        // exit(0);
-    }
-    else {
-        r.input.air_temp = cvt_c_f(r.input.air_temp);
-    }
-}
 
 // Determine which path to take
     response_t path (const std::map<std::string, std::string>& query_params) {
@@ -268,8 +227,4 @@ response_t validate_dew_temp (const response_t& response) {
     }
 */
 
-
-/**/
-
-             /**/
 
