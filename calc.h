@@ -7,11 +7,14 @@
 #include <nlohmann/json.hpp>
 
 struct input_data_t {
-    double air_temp = -99.0;
-    double dew_temp = -500.0;
-    double relative_humidity = 100.0;
+    double air_temp = -273.0;
+    std::string air_uom = "F";
+    double dew_temp = -270.0;
+    std::string dew_uom = "C";
+    double relative_humidity = 0.0;
+    bool is_dp_set = false;
+    bool is_rh_set = false;
 };
-
 
 // A pair of response values from the calculator
 struct response_t {
@@ -54,13 +57,13 @@ using kvp = std::map<std::string, std::string>;
 // Validations
 response_t validate (const kvp& query_params);
 
-response_t validate_air_temp (const kvp&, response_t*);
-response_t validate_air_temp_uom (const kvp&, response_t*);
-response_t validate_dewpoint (const kvp&, response_t*);
-response_t validate_dewpoint_uom (const kvp&, response_t*);
-response_t validate_relative_humidity (const kvp&, response_t*);
-response_t validate_input_values (const kvp&, response_t*);
-response_t validate_dew_rel_hum (const kvp&, response_t*);
+response_t validate_air_temp (const kvp&, const response_t&);
+response_t validate_air_temp_uom (const kvp&, const response_t&);
+response_t validate_dewpoint (const kvp&, const response_t&);
+response_t validate_dewpoint_uom (const kvp&, const response_t&);
+response_t validate_relative_humidity (const kvp&, const response_t&);
+response_t validate_input_values (const response_t&);
+response_t validate_dew_rel_hum (const response_t&);
 
 // build a json object for a specific UOM and value pair
 nlohmann::json make_json_param(const std::string& uom, const double& value);
@@ -83,9 +86,6 @@ constexpr double cvt_c_f(double c) { return (9.0 / 5.0) * c + 32.0; }
 // convert Fahrenheit to Celcius
 constexpr double cvt_f_c(double f) { return (5.0 / 9.0) * (f - 32.0); }
 
-
-//Determines need to calculate Vapor Pressure
-response_t cvt_dew_rh (const kvp&, response_t*);
 
 // Calculate Vapor Pressure
 inline double calculate_vapor_pressure (double air_temp) {
