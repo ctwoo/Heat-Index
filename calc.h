@@ -9,8 +9,8 @@
 struct input_data_t {
     double air_temp = -273.0;
     std::string air_uom = "F";
-    double dew_temp = -270.0;
-    std::string dew_uom = "C";
+    double dew_temp = -273.0;
+    std::string dew_uom = "F";
     double relative_humidity = 0.0;
     bool is_dp_set = false;
     bool is_rh_set = false;
