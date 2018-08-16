@@ -10,16 +10,13 @@ ifneq ($(OS),Windows_NT)
 	CXXFLAGS += -DHAVE_SETENV
 endif
 
-INCLUDES+=-I../../json/single_include
-INCLUDES+=-I../../doctest
+INCLUDES+=-I../../include/json/single_include
+INCLUDES+=-I../../include/doctest
 INCLUDES+=-I/usr/local/include
 
-PROGS = test-util test-calc
+PROGS = test-calc
 
 all: $(PROGS)
-
-test-util : clean
-	${CXX} ${CXXFLAGS} ${INCLUDES}  -o $@ ../util.cpp test-util.cpp
 
 test-calc : clean
 	${CXX} ${CXXFLAGS} ${INCLUDES}  -o $@ ../util.cpp ../calc.cpp test-calc.cpp
