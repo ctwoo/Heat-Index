@@ -1,3 +1,5 @@
+#undef DOCTEST_CONFIG_POSIX_SIGNALS
+
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "../calc.h"
 #include <doctest.h>
@@ -13,7 +15,7 @@ SCENARIO( "Validate air temp inputs" ) {
 
     WHEN ("Air temp is valid") {
 	qp["air_temp"] = "22";
-	response_t expected = {true, json::object({{"status","success"}})};
+	response_t expected = {true, {"status","success"}};
 	response_t actual = expected;
 	expected.input.air_temp = 22;
 	validate_air_temp(qp, &actual);
@@ -27,7 +29,7 @@ SCENARIO( "Validate air temp inputs" ) {
 
     WHEN ("Air temp is not reasonable for heat index") {
 	qp["air_temp"] = "10";
-	response_t expected = {true, json::object({{"status","success"}})};
+	response_t expected = {true, {"status","success"}};
 	response_t actual = expected;
 	expected.valid = false;
 	validate_air_temp(qp, &actual);
@@ -38,7 +40,7 @@ SCENARIO( "Validate air temp inputs" ) {
 
 //    WHEN ("Air temp is not a number") {
 //	qp["air_temp"] = "foo";
-//	response_t expected = {false, json::object({{"status","error"}})};
+//	response_t expected = {false, {{"status","error"}};
 //	response_t actual = expected;
 //	expected.input.air_temp = -99;
 //	validate_air_temp(qp, &actual);

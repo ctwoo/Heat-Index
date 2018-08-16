@@ -28,12 +28,13 @@ response_t validate(const kvp& query_params)
     if (!response.valid) return response;
     response = validate_air_temp_uom(query_params, response);
     if (!response.valid) return response;
+    response = validate_relative_humidity(query_params, response);
+    if (!response.valid) return response;
     response = validate_dewpoint(query_params, response);
     if (!response.valid) return response;
     response = validate_dewpoint_uom(query_params, response);
     if (!response.valid) return response;
-    response = validate_relative_humidity(query_params, response);
-    if (!response.valid) return response;
+
     response = validate_input_values(response);
     if (!response.valid) return response;
     response = validate_dew_rel_hum (response);
@@ -89,7 +90,7 @@ response_t validate_air_temp_uom(const kvp& query_params, const response_t& resp
 	}
 	else {
 	    r.valid = false;
-	    r.doc["stats"] = "error";
+	    r.doc["status"] = "error";
 	    r.doc["message"] = "Unknown unit of measure provided.";
 	    r.doc["expected"] = "One of 'uom=C' or 'uom=F'.";
 	    r.doc["actual"] = it->second;
@@ -173,26 +174,43 @@ response_t validate_dewpoint_uom(const kvp& query_params, const response_t& resp
 
 response_t validate_input_values(const response_t& response) {
     auto r = response;
-    if (r.input.air_temp < 80) {
+    auto air_max_bound = 80;
+    auto dew_min_bound = 10;
+    if (r.input.air_uom == "F") {
+        air_max_bound = 80;
+    }
+    else if (r.input.air_uom == "C") {
+        air_max_bound = 26.66667;
+    }
+
+    if (r.input.air_temp < air_max_bound) {
 	r.valid = false;
 	r.doc["status"] = "error";
 	r.doc["message"] =
 	    "The valid input limits for air temperature is greater than 80 deg Fahrenheit or 26.66667 deg Celsius.";
 	return r;
     }
-    if (r.input.relative_humidity < 40.0 || r.input.relative_humidity > 100) {
-        r.valid = false;
-        r.doc["status"] = "error";
-        r.doc["message"] = "The valid input limits for relative humidity is greater than 40 and less than 100.";
-        if (r.input.dew_temp < -243.0 || r.input.dew_temp > r.input.air_temp) {
+    if (!r.input.relative_humidity=second.empty) {
+        if (r.input.relative_humidity < 40.0 || r.input.relative_humidity > 100) {
             r.valid = false;
             r.doc["status"] = "error";
-            r.doc["message"] =
-            "The valid input limits for dewpoint temperature are between -243C and the input air temperature.";
-        } else {
-	    r.input.is_dp_set = true;
+            r.doc["message"] = "The valid input limits for relative humidity is greater than 40 and less than 100.";
         }
+    }
+    if (r.input.dew_uom == "C") {
+        dew_min_bound = -243;
+    } else if (r.input.dew_uom == "F") {
+        dew_min_bound = -405.4;
+    }
+    if (r.input.dew_temp < dew_min_bound || r.input.dew_temp > r.input.air_temp) {
+        r.valid = false;
+        r.doc["status"] = "error";
+        r.doc["message"] =
+            "The valid input limits for dewpoint temperature are between -243 deg Celsius (or -405.4 deg Fahrenheit) and the input air temperature.";
     } else {
+	    r.input.is_dp_set = true;
+    }
+    else {
 	r.input.is_rh_set = true;
     }
     std::cout << "\nuse rh? " << r.input.is_rh_set << '\n';
@@ -219,19 +237,18 @@ response_t validate_dew_rel_hum (const response_t& response) {
 
 response_t calculate (const response_t& response) {
     auto r = response;
-    auto air_temp_F = r.input.air_temp;
+    auto air_temp = r.input.air_temp;
     auto dewpoint = r.input.dew_temp;
-    auto air_temp_C = r.input.air_temp;
     if (r.input.air_uom == "F") {
-        air_temp_C = cvt_f_c(r.input.air_temp);
+        air_temp = cvt_f_c(r.input.air_temp);
     }
     if (r.input.dew_uom == "F") {
         dewpoint = cvt_f_c(r.input.dew_temp);
     }
     if (r.input.is_dp_set == true) {
-	r.input.relative_humidity = calculate_relative_humidity(air_temp_C, dewpoint);
+	r.input.relative_humidity = calculate_relative_humidity(air_temp, dewpoint);
     }
-    auto heat_index = calculate_heat_index(air_temp_F, r.input.relative_humidity);
+    auto heat_index = calculate_heat_index(air_temp, r.input.relative_humidity);
     r.doc["data"]["heat_index"] = make_json_pair("deg F", heat_index);
 
     return r;
