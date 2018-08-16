@@ -190,27 +190,24 @@ response_t validate_input_values(const response_t& response) {
 	    "The valid input limits for air temperature is greater than 80 deg Fahrenheit or 26.66667 deg Celsius.";
 	return r;
     }
-    if (!r.input.relative_humidity=second.empty) {
-        if (r.input.relative_humidity < 40.0 || r.input.relative_humidity > 100) {
-            r.valid = false;
-            r.doc["status"] = "error";
-            r.doc["message"] = "The valid input limits for relative humidity is greater than 40 and less than 100.";
-        }
-    }
+    if (r.input.relative_humidity < 40.0 || r.input.relative_humidity > 100) {
+        r.valid = false;
+        r.doc["status"] = "error";
+        r.doc["message"] = "The valid input limits for relative humidity is greater than 40 and less than 100.";
     if (r.input.dew_uom == "C") {
         dew_min_bound = -243;
     } else if (r.input.dew_uom == "F") {
         dew_min_bound = -405.4;
     }
     if (r.input.dew_temp < dew_min_bound || r.input.dew_temp > r.input.air_temp) {
-        r.valid = false;
-        r.doc["status"] = "error";
-        r.doc["message"] =
+            r.valid = false;
+            r.doc["status"] = "error";
+            r.doc["message"] =
             "The valid input limits for dewpoint temperature are between -243 deg Celsius (or -405.4 deg Fahrenheit) and the input air temperature.";
-    } else {
+        } else {
 	    r.input.is_dp_set = true;
-    }
-    else {
+        }
+    } else {
 	r.input.is_rh_set = true;
     }
     std::cout << "\nuse rh? " << r.input.is_rh_set << '\n';
