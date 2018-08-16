@@ -30,10 +30,18 @@ response_t validate(const kvp& query_params)
     if (!response.valid) return response;
     response = validate_relative_humidity(query_params, response);
     if (!response.valid) return response;
-    response = validate_dewpoint(query_params, response);
+
+    // What should happen is this path happens if relative humidity input is empty:
+    // Validates the following:
+    // 1. dewpoint query string
+    // 2. optional dewpoint uom
+    // 3. air temperature value
+    // 4.
+    {response = validate_dewpoint(query_params, response);
     if (!response.valid) return response;
     response = validate_dewpoint_uom(query_params, response);
-    if (!response.valid) return response;
+    if (!response.valid) return response;}
+
 
     response = validate_input_values(response);
     if (!response.valid) return response;
@@ -100,30 +108,7 @@ response_t validate_air_temp_uom(const kvp& query_params, const response_t& resp
     return r;
 }
 
-response_t validate_relative_humidity (const kvp& query_params, const response_t& response) {
-    auto r = response;
-    auto it = query_params.find("relative_humidity");
-    if (it != query_params.end() && !it->second.empty()) {
-	if (numeric(it->second)) {
-	    r.input.relative_humidity = atof(it->second.c_str());
-	}   else if (it->second.empty()) {
-	    r.valid = false;
-	    r.doc["status"] = "error";
-	    r.doc["message"] = "No value provided for relative_humidity input parameter.";
-	    r.doc["expected"] = "a floating point value (0,100)";
-	    r.doc["actual"] = it->second;
-	}
-	else {
-	    r.valid = false;
-	    r.doc["status"] = "error";
-	    r.doc["message"] = "Non-numeric value provided for relative_humidity.";
-	    r.doc["expected"] = "a floating point value (0,100)";
-	    r.doc["actual"] = it->second;
-	}
-    }
-    std::cout << "\nrh " << r.input.relative_humidity << '\n';
-    return r;
-}
+
 
 response_t validate_dewpoint (const kvp& query_params, const response_t& response) {
     auto r = response;
@@ -172,16 +157,41 @@ response_t validate_dewpoint_uom(const kvp& query_params, const response_t& resp
     return r;
 }
 
+response_t validate_relative_humidity (const kvp& query_params, const response_t& response) {
+    auto r = response;
+    auto it = query_params.find("relative_humidity");
+    if (it != query_params.end() && !it->second.empty()) {
+	if (numeric(it->second)) {
+	    r.input.relative_humidity = atof(it->second.c_str());
+	}   else if (it->second.empty()) {
+	    r.valid = false;
+	    r.doc["status"] = "error";
+	    r.doc["message"] = "No value provided for relative_humidity input parameter.";
+	    r.doc["expected"] = "a floating point value (0,100)";
+	    r.doc["actual"] = it->second;
+	}
+	else {
+	    r.valid = false;
+	    r.doc["status"] = "error";
+	    r.doc["message"] = "Non-numeric value provided for relative_humidity.";
+	    r.doc["expected"] = "a floating point value (0,100)";
+	    r.doc["actual"] = it->second;
+	}
+    }
+    std::cout << "\nrh " << r.input.relative_humidity << '\n';
+    return r;
+}
 response_t validate_input_values(const response_t& response) {
     auto r = response;
-    auto air_max_bound = 80;
-    auto dew_min_bound = 10;
-    if (r.input.air_uom == "F") {
-        air_max_bound = 80;
-    }
-    else if (r.input.air_uom == "C") {
+    auto air_max_bound = 80.0;
+    auto dew_min_bound = 10.0;
+    if (r.input.air_uom == "C") {
         air_max_bound = 26.66667;
     }
+    else {
+        air_max_bound = 80.0;
+    }
+
 
     if (r.input.air_temp < air_max_bound) {
 	r.valid = false;
@@ -190,12 +200,14 @@ response_t validate_input_values(const response_t& response) {
 	    "The valid input limits for air temperature is greater than 80 deg Fahrenheit or 26.66667 deg Celsius.";
 	return r;
     }
+
+
     if (r.input.relative_humidity < 40.0 || r.input.relative_humidity > 100) {
         r.valid = false;
         r.doc["status"] = "error";
         r.doc["message"] = "The valid input limits for relative humidity is greater than 40 and less than 100.";
     if (r.input.dew_uom == "C") {
-        dew_min_bound = -243;
+        dew_min_bound = -243.0;
     } else if (r.input.dew_uom == "F") {
         dew_min_bound = -405.4;
     }
