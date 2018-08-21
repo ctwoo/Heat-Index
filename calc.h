@@ -9,11 +9,13 @@
 struct input_data_t {
     double air_temp = -273.0;
     std::string air_uom = "F";
+    double min_temp = 80;
+    double max_temp = 212;
     double dew_temp = -273.0;
-    std::string dew_uom = "F";
     double relative_humidity = 0.0;
     bool is_dp_set = false;
     bool is_rh_set = false;
+    /*bool mark_rh = false;*/
 };
 
 // A pair of response values from the calculator
@@ -57,19 +59,23 @@ using kvp = std::map<std::string, std::string>;
 // Validations
 response_t validate (const kvp& query_params);
 
-response_t validate_air_temp (const kvp&, const response_t&);
-response_t validate_air_temp_uom (const kvp&, const response_t&);
-response_t validate_dewpoint (const kvp&, const response_t&);
-response_t validate_dewpoint_uom (const kvp&, const response_t&);
-response_t validate_relative_humidity (const kvp&, const response_t&);
-response_t validate_input_values (const response_t&);
-response_t validate_dew_rel_hum (const response_t&);
+response_t read_air_temp (const kvp&, const response_t&);
+response_t read_air_temp_uom (const kvp&, const response_t&);
+response_t read_dewpoint (const kvp&, const response_t&);
+response_t read_relative_humidity (const kvp&, const response_t&);
+bool both_rh_dp_set (const response_t&);
+bool neither_rh_dp_set (const response_t& r);
 
 // build a json object for a specific UOM and value pair
 nlohmann::json make_json_param(const std::string& uom, const double& value);
 
 // determine if a string can be converted to a numeric type
 bool numeric(std::string value);
+
+// check if a certain kvp holds a value
+bool quantity_provided(const std::string& quantity, const kvp& query_params);
+bool key_provided(const std::string& quantity, const kvp& query_params);
+bool is_temp_valid(double value, const double min_temp, const double max_temp);
 
 // Specific gas constant for water vapor
 constexpr double R = 461.514;
